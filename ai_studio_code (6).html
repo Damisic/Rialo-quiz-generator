@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIALO Academy | Protocol Certification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --blue-primary: #3b82f6; --dark-bg: #030408; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--dark-bg);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Premium Glassmorphism */
+        .glass {
+            background: rgba(10, 15, 30, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn:hover {
+            border-color: var(--blue-primary);
+            background: rgba(59, 130, 246, 0.05);
+            transform: translateX(8px);
+        }
+
+        .option-btn.selected {
+            background: linear-gradient(90deg, #1d4ed8, #3b82f6);
+            border-color: #60a5fa;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Certificate Aesthetic */
+        #certificate {
+            background: #ffffff;
+            color: #000000;
+            width: 842px; /* Standard A4 landscape ratio */
+            height: 595px;
+            padding: 60px;
+            border: 20px solid #000;
+            border-image: linear-gradient(45deg, #1d4ed8, #000, #3b82f6) 1;
+            background-image: 
+                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.03) 0, rgba(59, 130, 246, 0.03) 100px, transparent 100px),
+                linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px, 20px 20px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.6s ease forwards; }
+
+        .loading-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--blue-primary);
+            box-shadow: 0 0 15px var(--blue-primary);
+            transition: width 0.4s ease;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- DECORATIVE BLOBS -->
+    <div class="fixed top-0 left-0 w-96 h-96 bg-blue-600/10 blur-[150px] rounded-full -z-10"></div>
+    <div class="fixed bottom-0 right-0 w-96 h-96 bg-blue-500/10 blur-[150px] rounded-full -z-10"></div>
+
+    <!-- 1. LANDING / LOGIN -->
+    <div id="login-screen" class="max-w-md w-full glass p-10 rounded-[2.5rem] animate-fade">
+        <div class="text-center mb-10">
+            <div class="relative inline-block mb-6">
+                <img id="avatar-preview" src="https://ui-avatars.com/api/?name=R&background=1e293b&color=fff" 
+                    class="w-24 h-24 rounded-[2rem] border-2 border-blue-500/50 p-1 object-cover transition-all duration-500">
+                <div class="absolute -bottom-2 -right-2 bg-blue-600 rounded-full p-1.5 border-4 border-[#030408]">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+            </div>
+            <h1 class="text-4xl font-black tracking-tighter mb-2 italic">RIALO</h1>
+            <p class="text-zinc-500 text-xs font-bold uppercase tracking-[0.3em]">Agent Economy Academy</p>
+        </div>
+
+        <div class="space-y-6">
+            <div>
+                <label class="text-[10px] font-bold text-blue-500 mb-2 block uppercase tracking-widest ml-1">Connect X Username</label>
+                <input type="text" id="twitter-input" 
+                    oninput="updateAvatar(this.value)"
+                    class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-zinc-700" 
+                    placeholder="e.g. RialoHQ">
+            </div>
+            <button onclick="startAssessment()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-blue-500 shadow-xl shadow-blue-900/20 transition-all active:scale-95">
+                Begin Assessment
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. QUIZ INTERFACE -->
+    <div id="quiz-screen" class="hidden max-w-2xl w-full glass p-8 md:p-12 rounded-[2.5rem] animate-fade">
+        <div class="flex items-center justify-between mb-12">
+            <div class="flex items-center gap-4">
+                <img id="quiz-user-img" src="" class="w-12 h-12 rounded-xl border border-blue-500/30">
+                <div>
+                    <h3 id="quiz-user-name" class="text-white font-bold text-sm tracking-tight"></h3>
+                    <p id="q-counter" class="text-blue-500 font-bold text-[10px] uppercase tracking-widest">Question 01 of 10</p>
+                </div>
+            </div>
+            <div class="w-32 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div id="progress-fill" class="loading-bar" style="width: 10%"></div>
+            </div>
+        </div>
+        
+        <div id="q-box">
+            <h2 id="q-text" class="text-2xl font-bold mb-10 leading-snug"></h2>
+            <div id="options-list" class="flex flex-col gap-4">
+                <!-- Stacked Columns -->
+            </div>
+        </div>
+
+        <button id="next-btn" onclick="handleNext()" class="mt-10 w-full py-4 bg-zinc-800 rounded-2xl font-bold text-zinc-500 cursor-not-allowed transition-all" disabled>
+            Select an option
+        </button>
+    </div>
+
+    <!-- 3. LOADING STATE -->
+    <div id="loading-screen" class="hidden text-center animate-fade">
+        <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+        <h2 class="text-xl font-bold tracking-tight">Analyzing Knowledge...</h2>
+        <p class="text-zinc-500 text-sm mt-2">Verifying credentials on Rialo Protocol</p>
+    </div>
+
+    <!-- 4. FAILURE STATE -->
+    <div id="fail-screen" class="hidden max-w-md w-full glass p-10 rounded-[3rem] text-center animate-fade">
+        <div class="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </div>
+        <h2 class="text-3xl font-bold mb-2">Access Denied</h2>
+        <p id="fail-msg" class="text-zinc-400 mb-8">You didn't reach the required 80% accuracy.</p>
+        <button onclick="location.reload()" class="w-full bg-white text-black py-4 rounded-2xl font-bold hover:bg-zinc-200 transition-all">Retry Mission</button>
+    </div>
+
+    <!-- 5. CERTIFICATE -->
+    <div id="cert-wrap" class="hidden flex flex-col items-center animate-fade">
+        <div id="certificate" class="shadow-2xl relative overflow-hidden">
+            <!-- Seal Decor -->
+            <div class="absolute top-10 right-10 flex flex-col items-center">
+                <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center border-4 border-blue-100 shadow-lg">
+                    <span class="text-white font-black text-3xl italic">R</span>
+                </div>
+                <p class="text-[8px] font-bold mt-2 uppercase tracking-widest text-zinc-400">Verified Badge</p>
+            </div>
+
+            <div class="flex items-center gap-6 mb-16">
+                <img id="cert-avatar" src="" class="w-32 h-32 rounded-3xl border-4 border-white shadow-2xl object-cover">
+                <div>
+                    <h1 class="text-6xl font-black tracking-tighter text-blue-600 leading-none">RIALO</h1>
+                    <p class="text-sm font-bold tracking-[.4em] text-zinc-400 mt-2 uppercase">Protocol Expert Certification</p>
+                </div>
+            </div>
+
+            <div class="mt-12">
+                <p class="text-zinc-400 italic text-xl mb-2">This globally recognizes that</p>
+                <h2 id="cert-user" class="text-6xl font-extrabold text-black tracking-tight mb-8">@User</h2>
+                <div class="h-1 w-32 bg-blue-600 mb-10"></div>
+                <p class="text-xl text-zinc-700 max-w-2xl leading-relaxed">
+                    Has demonstrated mastery of the <b>Rialo Agent Economy</b>, successfully navigating the complexities of <b>On-chain Liquidity</b> and <b>Real World Asset (RWA)</b> integration with a score of 80% or higher.
+                </p>
+            </div>
+
+            <div class="absolute bottom-12 left-12">
+                <p class="text-[9px] font-mono text-zinc-400 uppercase">License ID: RLO-ALPHA-2026</p>
+            </div>
+            
+            <div class="absolute bottom-12 right-12 text-right">
+                <p class="text-[10px] font-bold text-zinc-400 uppercase mb-1">Authenticated</p>
+                <p id="cert-date" class="font-bold text-black text-sm"></p>
+            </div>
+        </div>
+        
+        <div class="flex gap-4 mt-10">
+            <button onclick="window.print()" class="bg-blue-600 px-10 py-4 rounded-2xl font-bold shadow-xl hover:bg-blue-500 transition-all">Download PDF</button>
+            <button onclick="location.reload()" class="bg-zinc-900 border border-white/10 px-10 py-4 rounded-2xl font-bold">Restart</button>
+        </div>
+    </div>
+
+    <script>
+        // 100 QUESTION DATABASE
+        const database = [
+            { q: "Rialo's goal is to make the Agent Economy simple and...", options: ["Expensive", "Safe", "Complex", "Offline", "Limited"], correct: 1 },
+            { q: "What does Rialo transform into 'Real' assets on-chain?", options: ["Gaming skins", "Real World Assets (RWAs)", "AI Chatbots", "Virtual Land", "Stock Photos"], correct: 1 },
+            { q: "The mission is to build a future where agents are accessible to...", options: ["Only Banks", "Everyone safely", "Only Devs", "No one", "Governments only"], correct: 1 },
+            { q: "Where can you find the Rialo Announcements channel?", options: ["Discord", "WhatsApp", "Telegram", "Instagram", "Facebook"], correct: 2 },
+            { q: "What is Rialo's official X handle?", options: ["@RialoWeb3", "@RialoNet", "@RialoHQ", "@RialoAgent", "@RialoReal"], correct: 2 },
+            { q: "Which forum hosts the Rialo community discussion?", options: ["Reddit", "Medium", "LinkedIn", "Quora", "Github"], correct: 0 },
+            { q: "What is Rialo's primary website domain?", options: ["rialo.com", "rialo.io", "rialo.net", "rialo.org", "rialo.app"], correct: 1 },
+            { q: "Rialo is primarily solving for...", options: ["Game lag", "On-chain asset liquidity", "Video editing", "Social networking", "Email security"], correct: 1 },
+            { q: "In the 'Introducing Rialo' blog, what is the central theme?", options: ["Mining Bitcoin", "Scaling the Agent Economy", "History of Web2", "VR headsets", "Global shipping"], correct: 1 },
+            { q: "Rialo specializes in the intersection of Web3 and...", options: ["Social Media", "Real World Assets", "Agriculture", "Outer Space", "Medicine"], correct: 1 },
+            // Programmatic fillers to demonstrate 100 question capacity
+            ...Array.from({length: 90}, (_, i) => ({
+                q: `Rialo Certification Tech Check #${i+11}: Which protocol standard ensures Rialo safety?`,
+                options: ["Proof of Work", "On-chain verification", "Physical locks", "Manual mailing", "Verbal agreement"],
+                correct: 1
+            }))
+        ];
+
+        let selection = [];
+        let responses = [];
+        let step = 0;
+        let user = "";
+
+        function getImg(h) {
+            const clean = h.replace('@', '').trim();
+            if(!clean) return `https://ui-avatars.com/api/?name=R&background=1e293b&color=fff`;
+            return `https://unavatar.io/twitter/${clean}?fallback=https://ui-avatars.com/api/?name=${clean}&background=3b82f6&color=fff`;
+        }
+
+        function updateAvatar(h) {
+            document.getElementById('avatar-preview').src = getImg(h);
+        }
+
+        function startAssessment() {
+            user = document.getElementById('twitter-input').value.trim();
+            if(!user) return alert("Identify your X handle first.");
+            
+            // Randomly Raffle 10
+            selection = [...database].sort(() => 0.5 - Math.random()).slice(0, 10);
+            
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('quiz-user-name').innerText = user.startsWith('@') ? user : `@${user}`;
+            document.getElementById('quiz-user-img').src = getImg(user);
+            
+            loadQ();
+        }
+
+        function loadQ() {
+            const current = selection[step];
+            document.getElementById('q-counter').innerText = `Question ${step + 1} of 10`;
+            document.getElementById('progress-fill').style.width = `${(step + 1) * 10}%`;
+            document.getElementById('q-text').innerText = current.q;
+            
+            const list = document.getElementById('options-list');
+            list.innerHTML = '';
+            
+            const btnNext = document.getElementById('next-btn');
+            btnNext.disabled = true;
+            btnNext.classList.replace('bg-blue-600', 'bg-zinc-800');
+            btnNext.classList.replace('text-white', 'text-zinc-500');
+
+            current.options.forEach((opt, i) => {
+                const b = document.createElement('button');
+                b.className = "option-btn p-5 rounded-2xl flex items-center font-medium";
+                b.innerHTML = `<span class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-4 text-[10px] font-black">${String.fromCharCode(65+i)}</span> ${opt}`;
+                
+                b.onclick = () => {
+                    document.querySelectorAll('.option-btn').forEach(x => x.classList.remove('selected'));
+                    b.classList.add('selected');
+                    responses[step] = i;
+                    btnNext.disabled = false;
+                    btnNext.classList.replace('bg-zinc-800', 'bg-blue-600');
+                    btnNext.classList.replace('text-zinc-500', 'text-white');
+                    btnNext.innerText = step === 9 ? "Finalize Analysis" : "Submit & Next";
+                };
+                list.appendChild(b);
+            });
+        }
+
+        function handleNext() {
+            if(step < 9) {
+                step++;
+                loadQ();
+            } else {
+                finish();
+            }
+        }
+
+        function finish() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+            
+            setTimeout(() => {
+                let score = 0;
+                selection.forEach((q, i) => { if(responses[i] === q.correct) score++; });
+                
+                document.getElementById('loading-screen').classList.add('hidden');
+                
+                if(score >= 8) {
+                    showCert();
+                } else {
+                    document.getElementById('fail-screen').classList.remove('hidden');
+                    document.getElementById('fail-msg').innerText = `Your accuracy was ${score * 10}%. A minimum of 80% is required for Rialo clearance.`;
+                }
+            }, 2000);
+        }
+
+        function showCert() {
+            document.getElementById('cert-wrap').classList.remove('hidden');
+            document.getElementById('cert-user').innerText = user.startsWith('@') ? user : `@${user}`;
+            document.getElementById('cert-avatar').src = getImg(user);
+            document.getElementById('cert-date').innerText = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+            confetti({ particleCount: 250, spread: 80, origin: { y: 0.6 }, colors: ['#3b82f6', '#ffffff'] });
+        }
+    </script>
+</body>
+</html>
