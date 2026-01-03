@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIALO | Agent Economy Certification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --rialo-blue: #3b82f6; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top right, #0a1120, #000000);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Identity Scan Animation */
+        .pfp-scanner {
+            position: relative;
+            padding: 8px;
+            border-radius: 40px;
+            background: linear-gradient(45deg, #1d4ed8, transparent, #3b82f6);
+            animation: rotate-border 4s linear infinite;
+        }
+
+        @keyframes rotate-border {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .user-pfp {
+            width: 140px;
+            height: 140px;
+            border-radius: 32px;
+            object-fit: cover;
+            border: 4px solid #000;
+            background: #111;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Options column layout */
+        .options-column { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+
+        .option-btn {
+            width: 100%;
+            padding: 20px 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            text-align: left;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            font-size: 1.05rem;
+        }
+
+        .option-btn:hover {
+            background: rgba(59, 130, 246, 0.12);
+            border-color: var(--rialo-blue);
+            transform: translateX(8px);
+        }
+
+        .option-btn.selected {
+            background: var(--rialo-blue);
+            border-color: var(--rialo-blue);
+            color: white;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        #certificate {
+            background: #ffffff;
+            color: #000000;
+            width: 850px;
+            height: 600px;
+            padding: 60px;
+            border: 20px solid #000;
+            border-image: linear-gradient(45deg, #1d4ed8, #000, #3b82f6) 1;
+            position: relative;
+            background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+            background-size: 25px 25px;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="p-6">
+
+    <!-- 1. IDENTITY VERIFICATION (LANDING) -->
+    <div id="login-screen" class="max-w-md w-full glass-panel p-12 rounded-[3rem] text-center">
+        <div class="mb-10 flex flex-col items-center">
+            <div class="pfp-scanner mb-6">
+                <img id="live-preview" 
+                     src="https://ui-avatars.com/api/?name=R&background=111&color=3b82f6&size=200" 
+                     class="user-pfp shadow-2xl">
+            </div>
+            <h1 class="text-4xl font-black italic tracking-tighter text-white">RIALO</h1>
+            <p class="text-blue-500 text-[11px] font-bold uppercase tracking-[0.5em] mt-2">Protocol Identity</p>
+        </div>
+        
+        <div class="space-y-6">
+            <div class="text-left">
+                <label class="text-[10px] font-bold text-zinc-500 ml-2 mb-2 block uppercase tracking-widest">Connect X Handle</label>
+                <input type="text" id="twitter-input" 
+                    oninput="syncIdentity(this.value)"
+                    class="w-full bg-black/60 border border-zinc-800 rounded-2xl py-5 px-6 text-white text-lg focus:outline-none focus:border-blue-500 transition-all placeholder:text-zinc-800" 
+                    placeholder="@RialoHQ">
+            </div>
+            <button onclick="startQuiz()" class="w-full bg-blue-600 py-5 rounded-2xl font-bold text-lg hover:bg-blue-500 shadow-xl shadow-blue-900/40 transition-all active:scale-95">
+                Verify & Begin
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. QUIZ SCREEN -->
+    <div id="quiz-screen" class="hidden max-w-2xl w-full glass-panel p-10 md:p-14 rounded-[3.5rem]">
+        <div class="flex items-center justify-between mb-12 pb-8 border-b border-white/5">
+            <div class="flex items-center gap-5">
+                <img id="quiz-avatar" src="" class="w-16 h-16 rounded-2xl border-2 border-blue-500 shadow-lg object-cover">
+                <div>
+                    <h3 id="quiz-handle" class="text-white font-extrabold text-lg tracking-tight">@User</h3>
+                    <p id="progress-text" class="text-blue-500 font-bold text-[10px] uppercase tracking-[0.2em]">Asset Audit: 01/10</p>
+                </div>
+            </div>
+            <div class="w-28 h-2 bg-zinc-900 rounded-full overflow-hidden">
+                <div id="progress-bar" class="h-full bg-blue-600 transition-all duration-700" style="width: 10%"></div>
+            </div>
+        </div>
+        
+        <div id="question-box">
+            <h2 id="question-text" class="text-3xl font-bold mb-10 leading-snug"></h2>
+            <div id="options-column" class="options-column">
+                <!-- Column based buttons -->
+            </div>
+        </div>
+
+        <button id="next-btn" onclick="goToNext()" class="mt-12 w-full py-5 bg-zinc-900 rounded-2xl font-bold text-zinc-600 cursor-not-allowed transition-all" disabled>
+            Select Asset Property
+        </button>
+    </div>
+
+    <!-- 3. FAIL SCREEN -->
+    <div id="fail-screen" class="hidden max-w-md w-full glass-panel p-12 rounded-[3.5rem] text-center">
+        <div class="w-24 h-24 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-red-600/20">
+            <span class="text-5xl">🛑</span>
+        </div>
+        <h2 class="text-3xl font-bold mb-3">Audit Failed</h2>
+        <p id="fail-score" class="text-zinc-400 mb-10">Verification accuracy: 0%. (80% required)</p>
+        <button onclick="location.reload()" class="w-full bg-white text-black py-5 rounded-2xl font-bold hover:bg-zinc-200 transition-all">Retry Synchronization</button>
+    </div>
+
+    <!-- 4. CERTIFICATE SCREEN -->
+    <div id="cert-screen" class="hidden flex flex-col items-center">
+        <div id="certificate" class="shadow-2xl mb-12">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-7xl font-black italic tracking-tighter text-blue-600 leading-none">RIALO</h1>
+                    <p class="text-sm tracking-[.5em] font-bold text-zinc-400 mt-3 uppercase italic">Official Protocol Expert</p>
+                </div>
+                <img id="cert-avatar" class="w-40 h-40 rounded-[2.5rem] border-8 border-white shadow-2xl object-cover" src="">
+            </div>
+
+            <div class="text-center mt-16">
+                <p class="text-zinc-500 italic text-2xl mb-2">This is to officially recognize</p>
+                <h2 id="cert-name" class="text-7xl font-extrabold text-black mb-8 tracking-tight">@User</h2>
+                <div class="h-2 w-40 bg-blue-600 mx-auto mb-12"></div>
+                <p class="text-2xl text-zinc-800 max-w-2xl mx-auto leading-relaxed font-semibold">
+                    For successfully mastering the <b>Rialo Agent Economy</b> framework and proving excellence in <b>Programmable Asset Security</b>.
+                </p>
+            </div>
+
+            <div class="absolute bottom-12 left-12 flex flex-col">
+                <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Protocol ID</span>
+                <span class="font-mono text-base font-black">RLO-CERT-2026-XP</span>
+            </div>
+            
+            <div class="absolute bottom-12 right-12 text-right">
+                <p class="text-xs font-bold text-zinc-400 uppercase mb-1 tracking-widest">Verification Date</p>
+                <p id="cert-date" class="font-bold text-black text-lg"></p>
+            </div>
+        </div>
+        <div class="flex gap-6">
+            <button onclick="window.print()" class="bg-blue-600 px-16 py-5 rounded-2xl font-bold text-white text-lg shadow-2xl hover:bg-blue-500 transition-all">Download License (PDF)</button>
+            <button onclick="location.reload()" class="bg-black/80 px-10 py-5 rounded-2xl font-bold text-white border border-white/10">Restart</button>
+        </div>
+    </div>
+
+    <script>
+        // QUESTION BANK (The 40 Core Provided)
+        const questionBank = [
+            { q: "Rialo is designed to make the agent economy more...", options: ["Chaotic", "Speculative", "Simple and safe", "Exclusive", "Manual"], correct: 2 },
+            { q: "Rialo primarily exists to support the...", options: ["Creator economy", "Gaming economy", "Agent economy", "Attention economy", "Ad economy"], correct: 2 },
+            { q: "Rialo helps agents safely interact with...", options: ["Social feeds", "Real-world markets", "Chat platforms", "Video games", "Forums"], correct: 1 },
+            { q: "Rialo focuses on making assets...", options: ["Speculative", "Static", "Programmable", "Invisible", "Temporary"], correct: 2 },
+            { q: "Markets are traditionally difficult for agents because they are...", options: ["Agent-friendly", "Human-centric", "Open-source", "Automated", "Decentralized"], correct: 1 },
+            { q: "Rialo allows agents to safely manage...", options: ["Media", "Opinions", "Economic value", "Messages", "Profiles"], correct: 2 },
+            { q: "Rialo is best described as a...", options: ["Wallet", "Layer 1 blockchain", "Real-world blockchain", "Exchange", "DAO"], correct: 2 },
+            { q: "Rialo is built for apps that react to...", options: ["Static files", "Manual input", "Live data", "Archived records", "Paper logs"], correct: 2 },
+            { q: "Rialo emphasizes safety through...", options: ["Human trust", "Programmatic guarantees", "Social consensus", "Manual review", "Reputation"], correct: 1 },
+            { q: "Rialo enables automation that feels like...", options: ["Bots", "Scripts", "Modern software", "Spreadsheets", "Manual workflows"], correct: 2 },
+            { q: "Rialo treats real-world assets as...", options: ["Speculation", "Programmable entities", "Locked balances", "Game items", "Memes"], correct: 1 },
+            { q: "Rialo removes unnecessary...", options: ["Transparency", "Automation", "Risk", "Rules", "Ownership"], correct: 2 },
+            { q: "Rialo connects agents directly to...", options: ["Games", "Economic systems", "Social networks", "Ad platforms", "Media sites"], correct: 1 },
+            { q: "Rialo enables actions that are...", options: ["Hidden", "Implicit", "Explicit and verifiable", "Anonymous", "Manual"], correct: 2 },
+            { q: "Rialo is optimized for developers building...", options: ["Static websites", "Agent-driven apps", "Games only", "NFT art", "Social tools"], correct: 1 },
+            { q: "Rialo is not primarily focused on...", options: ["Real utility", "Agents", "Speculation", "Safety", "Infrastructure"], correct: 2 },
+            { q: "Rialo allows agents to perform work that is...", options: ["Unverifiable", "Speculative", "Real and provable", "Hidden", "Temporary"], correct: 2 },
+            { q: "Rialo assumes agents need access that is...", options: ["Unlimited", "Unsafe", "Safe by default", "Anonymous only", "Centralized"], correct: 2 },
+            { q: "Rialo bridges the gap between agents and...", options: ["Entertainment", "Speculation", "Real-world systems", "Social feeds", "Ads"], correct: 2 },
+            { q: "Rialo prioritizes utility over...", options: ["Security", "Infrastructure", "Hype", "Developers", "Automation"], correct: 2 },
+            { q: "Rialo enables coordination that is...", options: ["Trust-based", "Manual", "Programmatic", "Social", "Centralized"], correct: 2 },
+            { q: "Rialo helps agents act with power that is...", options: ["Unlimited", "Ungoverned", "Bounded", "Invisible", "Speculative"], correct: 2 },
+            { q: "Rialo is built for agents doing...", options: ["Imaginary work", "Speculation", "Real work", "Gaming", "Posting"], correct: 2 },
+            { q: "Rialo systems are designed to be...", options: ["Opaque", "Implicit", "Explicit", "Hidden", "Ambiguous"], correct: 2 },
+            { q: "Rialo allows assets to reflect...", options: ["Memes", "Real-world state", "Social trends", "Hype", "Speculation"], correct: 1 },
+            { q: "Rialo makes agent participation more...", options: ["Chaotic", "Predictable", "Risky", "Unregulated", "Speculative"], correct: 1 },
+            { q: "Rialo reduces reliance on...", options: ["Code", "Infrastructure", "Human trust", "Automation", "Data"], correct: 2 },
+            { q: "Rialo is built for scale through...", options: ["Moderators", "Agent growth", "Manual approvals", "Central servers", "Social feeds"], correct: 1 },
+            { q: "Rialo enables economic actions that are...", options: ["Guess-based", "Untracked", "Verifiable", "Hidden", "Manual"], correct: 2 },
+            { q: "Rialo supports agents operating in...", options: ["Closed systems", "Real economies", "Games only", "Forums", "Chats"], correct: 1 },
+            { q: "Rialo focuses on safety at the...", options: ["UI level", "Economic layer", "Social layer", "Marketing layer", "Speculative layer"], correct: 1 },
+            { q: "Rialo makes automation feel...", options: ["Risky", "Manual", "Software-like", "Speculative", "Hidden"], correct: 2 },
+            { q: "Rialo is designed for long-term...", options: ["Hype cycles", "Economic infrastructure", "Token pumps", "Social trends", "Speculation"], correct: 1 },
+            { q: "Rialo helps agents avoid...", options: ["Code", "Ownership", "Unbounded risk", "Automation", "Transparency"], correct: 2 },
+            { q: "Rialo enables agents to act...", options: ["Blindly", "Safely", "Randomly", "Speculatively", "Manually"], correct: 1 },
+            { q: "Rialo is focused on real...", options: ["Memes", "Utility", "Hype", "Trends", "Speculation"], correct: 1 },
+            { q: "Rialo is infrastructure for the...", options: ["Creator wave", "Agent economy", "Ad economy", "Gaming boom", "NFT cycle"], correct: 1 },
+            { q: "Rialo enables programmable...", options: ["Trust", "Assets", "Opinions", "Trends", "Narratives"], correct: 1 },
+            { q: "Rialo allows agents to coordinate...", options: ["Socially", "Programmatically", "Manually", "Centrally", "Implicitly"], correct: 1 },
+            { q: "Rialo is built for agents operating...", options: ["Offline", "In real systems", "In games", "On forums", "In chats"], correct: 1 }
+        ];
+
+        // Ensure 100 questions (cloning variations for bank size)
+        while(questionBank.length < 100) {
+            let base = questionBank[questionBank.length % 40];
+            questionBank.push({...base, q: base.q + " [Ref]"});
+        }
+
+        let raffle = [];
+        let answers = [];
+        let index = 0;
+        let handle = "";
+        let timer;
+
+        // IDENTITY SCANNER LOGIC
+        function syncIdentity(val) {
+            clearTimeout(timer);
+            const preview = document.getElementById('live-preview');
+            preview.style.opacity = "0.5";
+            preview.style.transform = "scale(0.95)";
+            
+            timer = setTimeout(() => {
+                const clean = val.replace('@', '').trim();
+                const url = clean ? `https://unavatar.io/twitter/${clean}?fallback=https://ui-avatars.com/api/?name=${clean}&background=111&color=3b82f6&size=200&bold=true` : `https://ui-avatars.com/api/?name=R&background=111&color=3b82f6&size=200`;
+                preview.src = url;
+                preview.style.opacity = "1";
+                preview.style.transform = "scale(1)";
+            }, 600);
+        }
+
+        function startQuiz() {
+            handle = document.getElementById('twitter-input').value.trim();
+            if(!handle) return alert("Identify yourself with an X handle.");
+            if(handle.startsWith('@')) handle = handle.substring(1);
+
+            raffle = [...questionBank].sort(() => 0.5 - Math.random()).slice(0, 10);
+            
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('quiz-handle').innerText = `@${handle}`;
+            document.getElementById('quiz-avatar').src = document.getElementById('live-preview').src;
+            
+            render();
+        }
+
+        function render() {
+            const q = raffle[index];
+            const col = document.getElementById('options-column');
+            const next = document.getElementById('next-btn');
+            
+            document.getElementById('progress-text').innerText = `Asset Audit: ${index+1}/10`;
+            document.getElementById('progress-bar').style.width = `${(index+1)*10}%`;
+            document.getElementById('question-text').innerText = q.q;
+            
+            col.innerHTML = '';
+            next.disabled = true;
+            next.classList.replace('bg-blue-600', 'bg-zinc-900');
+            next.classList.replace('text-white', 'text-zinc-600');
+
+            q.options.forEach((opt, i) => {
+                const b = document.createElement('button');
+                b.className = "option-btn";
+                b.innerHTML = `<span class="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center mr-5 text-xs font-bold border border-white/5">${String.fromCharCode(65+i)}</span> ${opt}`;
+                b.onclick = () => {
+                    document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+                    b.classList.add('selected');
+                    answers[index] = i;
+                    next.disabled = false;
+                    next.classList.replace('bg-zinc-900', 'bg-blue-600');
+                    next.classList.replace('text-zinc-600', 'text-white');
+                    next.innerText = index === 9 ? "Finalize Verification" : "Next Property";
+                };
+                col.appendChild(b);
+            });
+        }
+
+        function goToNext() {
+            if(index < 9) {
+                index++;
+                render();
+            } else {
+                let score = 0;
+                raffle.forEach((q, i) => { if(answers[i] === q.correct) score++; });
+                
+                document.getElementById('quiz-screen').classList.add('hidden');
+                if(score >= 8) {
+                    showCert();
+                } else {
+                    document.getElementById('fail-screen').classList.remove('hidden');
+                    document.getElementById('fail-score').innerText = `Verification accuracy: ${score*10}%. (80% required)`;
+                }
+            }
+        }
+
+        function showCert() {
+            document.getElementById('cert-screen').classList.remove('hidden');
+            document.getElementById('cert-name').innerText = `@${handle}`;
+            document.getElementById('cert-avatar').src = document.getElementById('live-preview').src;
+            document.getElementById('cert-date').innerText = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            confetti({ particleCount: 250, spread: 80, origin: { y: 0.7 }, colors: ['#3b82f6', '#ffffff'] });
+        }
+    </script>
+</body>
+</html>
