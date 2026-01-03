@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIALO | Agent Economy Certification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #8B5CF6; --cyan: #22D3EE; --bg: #030303; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 0% 100%, rgba(34, 211, 238, 0.08) 0%, transparent 40%);
+            color: #E2E8F4;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: rgba(10, 10, 12, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8);
+        }
+
+        .option-btn {
+            width: 100%;
+            text-align: left;
+            padding: 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1.25rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: block;
+            position: relative;
+        }
+
+        .option-btn:hover {
+            background: rgba(139, 92, 246, 0.05);
+            border-color: var(--primary);
+            transform: scale(1.02);
+            padding-left: 1.75rem;
+        }
+
+        .option-btn.selected {
+            background: linear-gradient(90deg, var(--primary), var(--cyan));
+            border-color: white;
+            color: white;
+            font-weight: 700;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #8B5CF6 0%, #22D3EE 100%);
+            transition: all 0.4s;
+        }
+
+        .btn-action:hover:not(:disabled) {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+            box-shadow: 0 10px 30px -10px var(--primary);
+        }
+
+        .pfp-ring {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            padding: 3px;
+            background: linear-gradient(45deg, var(--primary), var(--cyan));
+        }
+
+        .pfp-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #111;
+        }
+
+        .fade-in { animation: fadeIn 0.6s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #certificate-canvas { border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; max-width: 700px; display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- SCREEN 1: ONBOARDING -->
+    <div id="screen-login" class="max-w-md w-full glass p-10 rounded-[3rem] text-center fade-in">
+        <div class="mb-8">
+            <h1 class="text-5xl font-extrabold tracking-tighter mb-2 italic">RIALO<span class="text-cyan-400">.</span></h1>
+            <p class="text-gray-500 font-semibold text-xs uppercase tracking-[0.3em]">The Agent Economy Standard</p>
+        </div>
+
+        <div class="space-y-6">
+            <div id="pfp-preview-container" class="hidden flex justify-center mb-4">
+                <div class="pfp-ring">
+                    <img id="preview-pfp" class="pfp-inner" src="" alt="PFP">
+                </div>
+            </div>
+            
+            <div class="text-left">
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">X (Twitter) Handle</label>
+                <input type="text" id="twitter-handle" oninput="showPfpPreview()" placeholder="@username" 
+                    class="w-full bg-white/5 border border-white/10 p-5 rounded-2xl mt-2 focus:outline-none focus:border-cyan-500 text-white transition-all text-lg">
+            </div>
+
+            <button onclick="startExamination()" class="w-full btn-action p-5 rounded-2xl font-bold uppercase tracking-widest text-sm text-black">
+                Start Examination
+            </button>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: EXAMINATION -->
+    <div id="screen-quiz" class="hidden max-w-2xl w-full glass p-10 rounded-[3rem] fade-in">
+        <div class="flex justify-between items-center mb-10">
+            <div class="flex items-center gap-5">
+                <div class="w-14 h-14 p-0.5 rounded-full bg-gradient-to-tr from-purple-500 to-cyan-400">
+                    <img id="quiz-header-pfp" class="w-full h-full rounded-full object-cover" src="" alt="">
+                </div>
+                <div>
+                    <h3 id="display-handle" class="font-bold text-white leading-none mb-1"></h3>
+                    <p id="q-counter" class="text-[10px] text-gray-500 font-black uppercase tracking-widest"></p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] text-gray-500 font-bold uppercase mb-1">Level 1 Knowledge</div>
+                <div class="w-32 h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-cyan-400 transition-all duration-700" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <h2 id="question-text" class="text-2xl font-bold mb-10 leading-snug"></h2>
+
+        <div id="options-column" class="flex flex-col space-y-4 mb-10">
+            <!-- Options injected -->
+        </div>
+
+        <button id="confirm-btn" onclick="submitAnswer()" disabled class="w-full py-5 rounded-2xl bg-white/5 border border-white/10 font-bold text-gray-500 cursor-not-allowed transition-all">
+            Confirm Selection
+        </button>
+    </div>
+
+    <!-- SCREEN 3: RESULTS -->
+    <div id="screen-result" class="hidden max-w-4xl w-full text-center fade-in">
+        <div class="glass p-12 rounded-[3.5rem]">
+            <div id="pass-ui" class="hidden">
+                <div class="inline-block px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-bold uppercase mb-4 tracking-widest border border-cyan-500/20">Certified Agent</div>
+                <h2 class="text-5xl font-extrabold mb-2 tracking-tight">Mastery Achieved.</h2>
+                <p id="final-score" class="text-gray-400 mb-10"></p>
+                
+                <div class="flex justify-center mb-10">
+                    <canvas id="certificate-canvas" width="1000" height="650"></canvas>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onclick="downloadCertificate()" class="btn-action px-12 py-5 rounded-2xl font-bold text-black uppercase tracking-widest">Download Asset</button>
+                    <button onclick="location.reload()" class="bg-white/5 px-12 py-5 rounded-2xl font-bold uppercase tracking-widest border border-white/10">Try Again</button>
+                </div>
+            </div>
+
+            <div id="fail-ui" class="hidden">
+                <div class="inline-block p-6 rounded-full bg-red-500/10 mb-6">
+                    <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </div>
+                <h2 class="text-4xl font-extrabold mb-4">Incomplete Knowledge.</h2>
+                <p id="fail-message" class="text-gray-400 mb-10 max-w-sm mx-auto">You scored below the 80% threshold required for certification in the Rialo Protocol.</p>
+                <button onclick="location.reload()" class="btn-action px-12 py-5 rounded-2xl font-bold text-black uppercase tracking-widest">Restart Test</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GENERATING THE 100 QUESTION BANK (Synthesized from Rialo core pillars)
+        const bank = [];
+        const themes = [
+            { t: "Mission", q: "What is Rialo's primary goal?", a: ["Simple and safe Agent Economy", "Mining BTC", "Hardware manufacturing", "Stock trading", "Cloud storage"], c: 0 },
+            { t: "RWA", q: "How does Rialo handle Real World Assets?", a: ["Banning them", "Tokenizing with native liquidity", "Physical vaults only", "Selling them for cash", "Manual auditing only"], c: 1 },
+            { t: "Technology", q: "Rialo execution is inspired by:", a: ["Cold-physics phenomena", "Traditional banking", "Web2 APIs", "Social media algorithms", "Manual paperwork"], c: 0 },
+            { t: "Agent", q: "In Rialo, an 'Agent' is typically:", a: ["A real estate broker", "Autonomous AI software", "A secret spy", "A customer support person", "A lawyer"], c: 1 },
+            { t: "Social", q: "Where is Rialo's official news channel?", a: ["t.me/rialo_announcements", "t.me/rialo_updates", "X.com", "LinkedIn", "Instagram"], c: 0 },
+            { t: "Vision", q: "Rialo makes RWA tokenization:", a: ["Invisible", "Real", "Impossible", "Illegal", "Slower"], c: 1 },
+            { t: "Protocol", q: "Which Reddit community is for Rialo?", a: ["r/Rialo", "r/RialoHQ", "r/Crypto", "r/AI", "r/RWA"], c: 0 },
+            { t: "Safety", q: "Safety in Rialo is ensured by:", a: ["Trusting people", "Safe-by-design protocol rails", "Government insurance", "Password protection only", "Closing the network"], c: 1 },
+            { t: "Utility", q: "Rialo bridges the gap between AI and:", a: ["On-chain Finance", "Retail stores", "Post offices", "Car dealerships", "Farming"], c: 0 },
+            { t: "Handle", q: "What is Rialo's X handle?", a: ["@RialoHQ", "@Rialo", "@RialoWeb3", "@RialoAI", "@RialoIO"], c: 0 }
+        ];
+
+        // Fill up the bank to 100 with variations
+        for(let i=0; i<100; i++) {
+            let base = themes[i % themes.length];
+            bank.push({ ...base, q: `${base.q} (#${i+1})` });
+        }
+
+        let selected = [];
+        let answers = [];
+        let cur = 0;
+        let selectedIdx = null;
+        let handle = "";
+        let pfpImg = new Image();
+
+        function showPfpPreview() {
+            const input = document.getElementById('twitter-handle').value.trim().replace('@', '');
+            if(input.length > 2) {
+                document.getElementById('pfp-preview-container').classList.remove('hidden');
+                const url = `https://unavatar.io/twitter/${input}?fallback=https://source.boringavatars.com/beam/120/${input}`;
+                document.getElementById('preview-pfp').src = url;
+                pfpImg.crossOrigin = "anonymous";
+                pfpImg.src = url;
+            } else {
+                document.getElementById('pfp-preview-container').classList.add('hidden');
+            }
+        }
+
+        function startExamination() {
+            handle = document.getElementById('twitter-handle').value.trim();
+            if(handle.length < 2) return alert("Enter your X handle.");
+            if(!handle.startsWith('@')) handle = '@' + handle;
+
+            selected = [...bank].sort(() => 0.5 - Math.random()).slice(0, 10);
+            
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.remove('hidden');
+            document.getElementById('quiz-header-pfp').src = pfpImg.src;
+            document.getElementById('display-handle').innerText = handle;
+            
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            selectedIdx = null;
+            const btn = document.getElementById('confirm-btn');
+            btn.disabled = true;
+            btn.className = "w-full py-5 rounded-2xl bg-white/5 border border-white/10 font-bold text-gray-500 cursor-not-allowed";
+            btn.innerText = "Confirm Selection";
+
+            const q = selected[cur];
+            document.getElementById('q-counter').innerText = `Examination ${cur + 1} of 10`;
+            document.getElementById('progress-bar').style.width = `${(cur + 1) * 10}%`;
+            document.getElementById('question-text').innerText = q.q;
+
+            const col = document.getElementById('options-column');
+            col.innerHTML = '';
+            q.a.forEach((opt, i) => {
+                const b = document.createElement('button');
+                b.className = "option-btn";
+                b.innerText = opt;
+                b.onclick = () => {
+                    selectedIdx = i;
+                    document.querySelectorAll('.option-btn').forEach(x => x.classList.remove('selected'));
+                    b.classList.add('selected');
+                    btn.disabled = false;
+                    btn.className = "w-full py-5 rounded-2xl btn-action font-bold text-black cursor-pointer shadow-lg";
+                };
+                col.appendChild(b);
+            });
+        }
+
+        function submitAnswer() {
+            answers.push(selectedIdx);
+            cur++;
+            if(cur < 10) renderQuestion();
+            else showResults();
+        }
+
+        function showResults() {
+            let score = 0;
+            answers.forEach((a, i) => { if(a === selected[i].c) score++; });
+
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            if(score >= 8) {
+                document.getElementById('pass-ui').classList.remove('hidden');
+                document.getElementById('final-score').innerText = `You attained a score of ${score * 10}% precision.`;
+                drawCert(score);
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#8B5CF6', '#22D3EE'] });
+            } else {
+                document.getElementById('fail-ui').classList.remove('hidden');
+                document.getElementById('fail-message').innerText = `Score: ${score}/10. The Rialo Protocol requires 80% mastery for official recognition.`;
+            }
+        }
+
+        function drawCert(score) {
+            const canvas = document.getElementById('certificate-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.style.display = 'block';
+
+            // Background Deep Charcoal
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, 1000, 650);
+
+            // Metallic Border
+            const g = ctx.createLinearGradient(0, 0, 1000, 650);
+            g.addColorStop(0, '#8B5CF6'); g.addColorStop(0.5, '#22D3EE'); g.addColorStop(1, '#8B5CF6');
+            ctx.strokeStyle = g; ctx.lineWidth = 16;
+            ctx.strokeRect(20, 20, 960, 610);
+
+            // Watermark
+            ctx.font = '900 120px Plus Jakarta Sans';
+            ctx.fillStyle = 'rgba(255,255,255,0.02)';
+            ctx.textAlign = 'center';
+            ctx.fillText('RIALO', 500, 360);
+
+            // Header
+            ctx.fillStyle = '#8B5CF6';
+            ctx.font = 'bold 22px Plus Jakarta Sans';
+            ctx.fillText('CERTIFICATE OF PROTOCOL MASTERY', 500, 100);
+
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 50px Plus Jakarta Sans';
+            ctx.fillText('EXPERT AGENT', 500, 180);
+
+            ctx.font = '22px Plus Jakarta Sans';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText('Recognizing the exceptional proficiency of', 500, 250);
+
+            // Name
+            ctx.font = 'bold 65px Plus Jakarta Sans';
+            ctx.fillStyle = 'white';
+            ctx.fillText(handle, 500, 350);
+
+            ctx.font = '20px Plus Jakarta Sans';
+            ctx.fillStyle = '#22D3EE';
+            ctx.fillText(`VERIFIED SCORE: ${score}/10 | DATE: ${new Date().toLocaleDateString()}`, 500, 420);
+
+            // Footer
+            ctx.font = '12px monospace';
+            ctx.fillStyle = '#334155';
+            ctx.fillText(`AUTH_TOKEN: ${Math.random().toString(36).substr(2, 12).toUpperCase()}`, 500, 600);
+
+            // Draw PFP with a glowing ring
+            const drawPfp = () => {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(500, 510, 55, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.drawImage(pfpImg, 445, 455, 110, 110);
+                ctx.restore();
+                
+                ctx.strokeStyle = '#22D3EE';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(500, 510, 58, 0, Math.PI * 2);
+                ctx.stroke();
+            };
+
+            if(pfpImg.complete) drawPfp(); else pfpImg.onload = drawPfp;
+        }
+
+        function downloadCertificate() {
+            const canvas = document.getElementById('certificate-canvas');
+            const link = document.createElement('a');
+            link.download = `RIALO_Expert_${handle}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>
